@@ -1,0 +1,12 @@
+appdirs==1.4.4
+hexdump==3.3
+lxml==5.4.0
+networkx==3.5
+packaging==25.0
+pyshark==0.6
+pyswip==0.3.2
+python-dateutil==2.9.0.post0
+python-evtx==0.8.1
+six==1.17.0
+termcolor==3.1.0
+xmltodict==0.14.2

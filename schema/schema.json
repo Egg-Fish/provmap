@@ -1,0 +1,60 @@
+{
+    "entities": [
+        {
+            "name": "process",
+            "fields": [
+                {
+                    "name": "process_id",
+                    "type": "int"
+                },
+                {
+                    "name": "process_name",
+                    "type": "str"
+                },
+                {
+                    "name": "process_cmd",
+                    "type": "str"
+                }
+            ]
+        },
+        {
+            "name": "file",
+            "fields": [
+                {
+                    "name": "file_path",
+                    "type": "str"
+                }
+            ]
+        },
+        {
+            "name": "socket",
+            "fields": [
+                {
+                    "name": "socket_ip",
+                    "type": "str"
+                },
+                {
+                    "name": "socket_port",
+                    "type": "int"
+                }
+            ]
+        },
+        {
+            "name": "http_transaction",
+            "fields": [
+                {
+                    "name": "http_transaction_uri",
+                    "type": "str"
+                },
+                {
+                    "name": "http_transaction_request_method",
+                    "type": "str"
+                },
+                {
+                    "name": "http_transaction_response_code",
+                    "type": "int"
+                }
+            ]
+        }
+    ]
+}
