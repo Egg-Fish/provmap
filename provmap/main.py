@@ -66,10 +66,10 @@ def save_as_graphviz(graph: Graph, outpath: str):
 def save_as_prolog(graph: Graph, outpath: str):
     logger.info(f"Saving graph {graph} as Prolog file {outpath}")
 
-    gv: str = graph.to_prolog()
+    prolog: str = graph.to_prolog()
 
     with open(outpath, "w") as f:
-        f.write(gv)
+        f.write(prolog)
 
 
 def main():
