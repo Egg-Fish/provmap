@@ -1,6 +1,8 @@
 import logging
 from functools import reduce
 
+
+from provmap.embedder import Embedder
 from provmap.loader import Loader
 from provmap.reasoner import Reasoner
 from provmap.graph.graph import Graph
@@ -15,6 +17,7 @@ CONFIG_APT17 = {
     "dir": "examples/APT17",
     "logs": {
         "sysmon": [
+            # "Sysmon.evtx",
             "Sysmon_1_3_11.evtx",
         ],
         "pcap": [
@@ -71,6 +74,7 @@ def save_as_prolog(graph: Graph, outpath: str):
     with open(outpath, "w") as f:
         f.write(prolog)
 
+
 def save_as_triples(graph: Graph, outpath: str):
     logger.info(f"Saving graph {graph} as triples {outpath}")
 
@@ -79,6 +83,7 @@ def save_as_triples(graph: Graph, outpath: str):
     with open(outpath, "w") as f:
         for t in triples:
             f.write("\t".join(map(str, t)) + "\n")
+
 
 def main():
     logger.info("Main started")
@@ -90,6 +95,10 @@ def main():
     save_as_prolog(graph, "out/graph.pl")
     save_as_triples(graph, "out/graph.txt")
 
+    embedder = Embedder(graph)
+    embedder.train()
+    embedder.plot()
+
     reasoner = Reasoner(graph, "rules/schema.pl", "rules/rules.pl")
 
     malicious_entities = reasoner.get_malicious_entities()
@@ -97,7 +106,9 @@ def main():
     for e in malicious_entities:
         tags = reasoner.get_tags(e)
 
-        print(tags)
+        embedding = embedder.get_entity_embedding(e.entity_id)
+
+        logger.info(f"Malicious entity {e} with tags {tags}")
 
     malicious_traces = [graph.trace(e.entity_id) for e in malicious_entities]
     malicious_traces += [Graph(), Graph()]  # Prevent reduce() from crashing
