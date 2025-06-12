@@ -125,5 +125,22 @@ class Graph:
 
         return "\n".join(entities + edges)
 
+    def to_triples(
+        self,
+        include_timestamp=True,
+    ) -> list[tuple[str, str, str] | tuple[str, str, str, float]]:
+        triples = []
+
+        for h, t, r, edge in self.G.edges(keys=True, data=True):
+            if include_timestamp:
+                triple = (h, r, t, edge["timestamp"])
+
+            else:
+                triple = (h, r, t)
+
+            triples.append(triple)
+
+        return triples
+
     def __str__(self) -> str:
         return f"Graph(|V| = {self.number_of_entities}, |E| = {self.number_of_edges})"

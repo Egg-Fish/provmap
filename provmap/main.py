@@ -71,6 +71,14 @@ def save_as_prolog(graph: Graph, outpath: str):
     with open(outpath, "w") as f:
         f.write(prolog)
 
+def save_as_triples(graph: Graph, outpath: str):
+    logger.info(f"Saving graph {graph} as triples {outpath}")
+
+    triples: list = graph.to_triples()
+
+    with open(outpath, "w") as f:
+        for t in triples:
+            f.write("\t".join(map(str, t)) + "\n")
 
 def main():
     logger.info("Main started")
@@ -80,6 +88,7 @@ def main():
 
     save_as_graphviz(graph, "out/graph.gv")
     save_as_prolog(graph, "out/graph.pl")
+    save_as_triples(graph, "out/graph.txt")
 
     reasoner = Reasoner(graph, "rules/schema.pl", "rules/rules.pl")
 
