@@ -22,13 +22,17 @@ class HttpTransaction(Entity):
     def generate_entity_id(self) -> str:
         return f"http_tx_{uuid4().hex}"
 
-    def to_graphviz(self) -> str:
+    @property
+    def label(self) -> str:
         url = urllib.parse.urlparse(self.uri)
 
+        return f"{self.request_method} {url.path}"
+
+    def to_graphviz(self) -> str:
         attributes = ", ".join(
             [
                 "shape=hexagon",
-                f'label="{self.request_method} {url.path}"',
+                f'label="{self.label}"',
                 f'http_transaction_uri="{self.uri}"',
                 f'http_transaction_request_method="{self.request_method}"',
                 f"http_transaction_response_code={self.response_code}",

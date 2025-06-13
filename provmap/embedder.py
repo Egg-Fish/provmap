@@ -113,7 +113,7 @@ class Embedder:
             {
                 "entity_id": entity_ids,
                 "entity_type": [str(type(e)) for e in entities],
-                "label": []
+                "label": [e.label for e in entities],
                 "idx": entity_df.index,
                 "x": reduced[:, 0],
                 "y": reduced[:, 1],

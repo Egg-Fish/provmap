@@ -28,6 +28,10 @@ class Process(Entity):
 
     def generate_entity_id(self) -> str:
         return f"{self.process_id}_{self.process_name}"
+    
+    @property
+    def label(self) -> str:
+        return f"{self.process_id}:{self.process_name}" 
 
     def combine(self, other: "Entity") -> "Process":
         if self.entity_id != other.entity_id:
@@ -54,7 +58,7 @@ class Process(Entity):
     def to_graphviz(self) -> str:
         attributes = ", ".join(
             [
-                f'label="{self.process_id}:{self.process_name}"',
+                f'label="{self.label}"',
                 f"process_id={self.process_id}",
                 f'process_name="{self.process_name}"',
                 f'process_cmd="{self.encoded_process_cmd}"',

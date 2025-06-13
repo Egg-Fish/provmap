@@ -14,11 +14,15 @@ class Socket(Entity):
     def generate_entity_id(self) -> str:
         return f"{self.socket_ip}_{self.socket_port}".replace(":", ".")
 
+    @property
+    def label(self) -> str:
+        return f"{self.socket_ip}:{self.socket_port}"
+
     def to_graphviz(self) -> str:
         attributes = ", ".join(
             [
                 "shape=diamond",
-                f'label="{self.socket_ip}:{self.socket_port}"',
+                f'label="{self.label}"',
                 f'socket_ip="{self.socket_ip}"',
                 f"socket_port={self.socket_port}",
             ]

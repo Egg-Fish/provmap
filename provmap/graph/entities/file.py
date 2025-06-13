@@ -21,11 +21,15 @@ class File(Entity):
     def generate_entity_id(self) -> str:
         return "file_" + sha256(self.file_path.encode()).hexdigest()
 
+    @property
+    def label(self) -> str:
+        return self.escaped_file_path
+
     def to_graphviz(self) -> str:
         attributes = ", ".join(
             [
                 "shape=note",
-                f'label="{self.escaped_file_path}"',
+                f'label="{self.label}"',
                 f'file_path="{self.escaped_file_path}"',
             ]
         )

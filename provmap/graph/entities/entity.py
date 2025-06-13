@@ -10,6 +10,10 @@ class Entity:
 
     def generate_entity_id(self) -> str:
         raise NotImplementedError()
+    
+    @property
+    def label(self) -> str:
+        return self.entity_id
 
     def combine(self, other: "Entity") -> "Entity":
         if self.entity_id != other.entity_id:
@@ -21,7 +25,7 @@ class Entity:
     def to_graphviz(self) -> str:
         attributes = ", ".join(
             [
-                f'label="{self.entity_id}"',
+                f'label="{self.label}"',
             ]
         )
 

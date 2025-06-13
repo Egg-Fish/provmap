@@ -21,11 +21,15 @@ class FtpTransaction(Entity):
     def generate_entity_id(self) -> str:
         return f"ftp_tx_{uuid4().hex}"
 
+    @property
+    def label(self) -> str:
+        return f"{self.command} {self.arg}" 
+
     def to_graphviz(self) -> str:
         attributes = ", ".join(
             [
                 "shape=hexagon",
-                f'label="{self.command} {self.arg}"',
+                f'label="{self.label}"',
                 f'ftp_transaction_command="{self.command}"',
                 f'ftp_transaction_arg="{self.arg}"',
                 f"ftp_transaction_response_code={self.response_code}",
