@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import torch
 from pykeen.models import ERModel
 from pykeen.triples import TriplesFactory
 from pykeen.pipeline import pipeline
@@ -41,6 +42,14 @@ class Embedder:
 
         return self._model
 
+    @property
+    def entities(self) -> np.ndarray:
+        return np.array(list(self.data["training"].entity_to_id.keys()), dtype=str)
+
+    @property
+    def relations(self) -> np.ndarray:
+        return np.array(list(self.data["training"].relation_to_id.keys()), dtype=str)
+
     def train(self) -> None:
         logger.info("Training embedder using TransE")
 
@@ -76,14 +85,14 @@ class Embedder:
         )
 
     def get_entity_embedding(self, entity_id: str) -> np.ndarray:
-        logger.info(f"Extracting embeddings for entity {entity_id}")
+        logger.debug(f"Extracting embeddings for entity {entity_id}")
 
         if not self.model:
             raise ValueError("Embedding tensor accessed before train()")
 
         data = self.data["training"]
 
-        if entity_id not in data.entity_to_id:
+        if entity_id not in self.entities:
             raise ValueError(f"Entity {entity_id} has no embedding")
 
         i = data.entity_to_id[entity_id]
@@ -91,6 +100,66 @@ class Embedder:
         embedding = self.entity_embedding_tensor[i]
 
         return embedding
+
+    def score_hrt(self, head: str, relation: str, tail: str) -> float:
+        logger.debug(f"Scoring triple ({head}, {relation}, {tail})")
+
+        if not self.model:
+            raise ValueError("Scoring triple before train()")
+
+        data = self.data["training"]
+
+        if head not in self.entities:
+            raise ValueError(f"Entity {head} not found")
+
+        if tail not in self.entities:
+            raise ValueError(f"Entity {tail} not found")
+
+        if relation not in data.relation_to_id:
+            raise ValueError(f"Relation {relation} not found")
+
+        hrt = torch.tensor(
+            [
+                (
+                    np.argwhere(self.entities == head)[0][0],
+                    np.argwhere(self.relations == relation)[0][0],
+                    np.argwhere(self.entities == tail)[0][0],
+                )
+            ]
+        )
+
+        return self.model.score_hrt(hrt)[0][0].item()
+
+    def score_t(self, head: str, relation: str, sort: bool = False) -> np.ndarray:
+        logger.debug(f"Scoring tails for ({head}, {relation}, <tail>)")
+
+        if not self.model:
+            raise ValueError("Scoring tails before train()")
+
+        data = self.data["training"]
+
+        if head not in self.entities:
+            raise ValueError(f"Entity {head} not found")
+
+        if relation not in self.relations:
+            raise ValueError(f"Relation {relation} not found")
+
+        hr = torch.tensor(
+            [
+                (
+                    np.argwhere(self.entities == head)[0][0],
+                    np.argwhere(self.relations == relation)[0][0],
+                )
+            ]
+        )
+
+        tail_scores = self.model.score_t(hr)[0].detach().numpy()
+        result = np.column_stack((np.arange(tail_scores.shape[0]), tail_scores))
+
+        if sort:
+            result = result[result[:, 1].argsort()[::-1]]
+
+        return result
 
     def plot(self, html_outpath: str | None = None) -> None:
         logger.info("Plotting entity embeddings")
