@@ -97,7 +97,7 @@ def main():
 
     embedder = Embedder(graph)
     embedder.train()
-    embedder.plot()
+    embedder.plot("out/entity_embeddings.html")
 
     reasoner = Reasoner(graph, "rules/schema.pl", "rules/rules.pl")
 

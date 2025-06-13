@@ -92,7 +92,7 @@ class Embedder:
 
         return embedding
 
-    def plot(self) -> None:
+    def plot(self, html_outpath: str | None = None) -> None:
         logger.info("Plotting entity embeddings")
 
         if not self.model:
@@ -115,21 +115,27 @@ class Embedder:
                 "entity_type": [str(type(e)) for e in entities],
                 "label": [e.label for e in entities],
                 "idx": entity_df.index,
-                "x": reduced[:, 0],
-                "y": reduced[:, 1],
+                "pca_1": reduced[:, 0],
+                "pca_2": reduced[:, 1],
             }
         )
 
         fig = px.scatter(
             plot_df,
-            x="x",
-            y="y",
+            x="pca_1",
+            y="pca_2",
             color="entity_type",
-            hover_data=["entity_id"],
+            hover_data=["entity_id", "label"],
             title="Entity Embeddings (PCA 2D)",
         )
 
         fig.show()
+
+        if html_outpath:
+            html = fig.to_html()
+
+            with open(html_outpath, "w") as f:
+                f.write(html)
 
     def to_csv(self, entity_outpath: str, relation_outpath: str):
         data = self.data["training"]
