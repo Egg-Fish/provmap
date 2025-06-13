@@ -73,46 +73,6 @@ def parse_http(pkt) -> tuple[str | int, str]:
         raise ValueError("Could not parse HTTP layer")
 
 
-# def parse_http_request(pkt) -> pcap.HttpRequest:
-#     timestamp = float(pkt.sniff_timestamp)
-#     source_ip, source_port, destination_ip, destination_port = parse_l3_l4(pkt)
-
-#     http = pkt.http
-
-#     top_line: str = getattr(http, "").strip().replace("\\r\\n", "")
-#     request_method, request_uri, _ = top_line.split(" ", maxsplit=2)
-
-#     return pcap.HttpRequest(
-#         timestamp=timestamp,
-#         client_ip=source_ip,
-#         client_port=source_port,
-#         server_ip=destination_ip,
-#         server_port=destination_port,
-#         request_uri=request_uri,
-#         request_method=request_method,
-#     )
-
-
-# def parse_http_response(pkt) -> pcap.HttpResponse:
-#     timestamp = float(pkt.sniff_timestamp)
-#     source_ip, source_port, destination_ip, destination_port = parse_l3_l4(pkt)
-
-#     http = pkt.http
-
-#     top_line: str = getattr(http, "").strip().replace("\\r\\n", "")
-#     _, response_code, _ = top_line.split(" ", maxsplit=2)
-
-#     return pcap.HttpResponse(
-#         timestamp=timestamp,
-#         server_ip=source_ip,
-#         server_port=source_port,
-#         client_ip=destination_ip,
-#         client_port=destination_port,
-#         request_uri=http.request_uri,
-#         response_code=int(response_code),
-#     )
-
-
 def parse_http_transaction(req, res) -> pcap.HttpTransaction:
     request_timestamp = float(req.sniff_timestamp)
     response_timestamp = float(res.sniff_timestamp)
@@ -158,33 +118,6 @@ def parse_ftp(pkt) -> tuple[str | int, str]:
 
     else:
         return (int(ftp_arg1 if ftp_arg1 else 0), ftp_arg2)
-
-
-# def parse_ftp_request(pkt) -> pcap.FtpRequest:
-#     timestamp = float(pkt.sniff_timestamp)
-#     source_ip, source_port, destination_ip, destination_port = parse_l3_l4(pkt)
-
-#     ftp = pkt.ftp
-
-#     top_line: str = getattr(ftp, "").strip().replace("\\r\\n", "")
-#     args = top_line.split(" ", maxsplit=1)
-
-#     if len(args) == 1:
-#         ftp_command = args[0]
-#         ftp_arg = ""
-
-#     else:
-#         ftp_command, ftp_arg = args
-
-#     return pcap.FtpRequest(
-#         timestamp=timestamp,
-#         client_ip=source_ip,
-#         client_port=source_port,
-#         server_ip=destination_ip,
-#         server_port=destination_port,
-#         ftp_command=ftp_command,
-#         ftp_arg=ftp_arg,
-#     )
 
 
 def parse_ftp_transaction(req, res) -> pcap.FtpTransaction:
