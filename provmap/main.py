@@ -96,25 +96,25 @@ def main():
     save_as_triples(graph, "out/graph.txt")
 
     embedder = Embedder(graph)
-    embedder.train()
+    embedder.train(embedding_dim=80, num_epochs=400)
 
-    score = embedder.score_hrt(
-        "file_021b6e05bb60ccb34383fd3c7e3c09170cbf88142ca0361ba63300a61f09290e",
-        "connects_to",
-        "172.202.163.200_443",
-    )
-
-    # scores = embedder.score_t(
-    #     "{65861cbf-c6ba-682f-7202-000000000600}",
+    # score = embedder.score_hrt(
+    #     "file_021b6e05bb60ccb34383fd3c7e3c09170cbf88142ca0361ba63300a61f09290e",
     #     "connects_to",
-    #     sort=True
+    #     "172.202.163.200_443",
     # )
 
     scores = embedder.score_t(
-        "192.168.56.100_21",
-        "responds_to",
+        "{65861cbf-c6ba-682f-7202-000000000600}",
+        "connects_to",
         sort=True
     )
+
+    # scores = embedder.score_t(
+    #     "192.168.56.100_21",
+    #     "responds_to",
+    #     sort=True
+    # )
 
     for row in scores[:10]:
         i, score = row

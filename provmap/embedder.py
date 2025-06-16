@@ -4,7 +4,10 @@ import logging
 import numpy as np
 import pandas as pd
 import plotly.express as px
+
 import torch
+from torch.nn.functional import softmax
+
 from pykeen.models import ERModel
 from pykeen.triples import TriplesFactory
 from pykeen.pipeline import pipeline
@@ -50,15 +53,16 @@ class Embedder:
     def relations(self) -> np.ndarray:
         return np.array(list(self.data["training"].relation_to_id.keys()), dtype=str)
 
-    def train(self) -> None:
+    def train(self, embedding_dim: int = 32, num_epochs: int = 100) -> None:
         logger.info("Training embedder using TransE")
 
         result = pipeline(
             training=self.data["training"],
             testing=self.data["testing"],
             validation=self.data["validation"],
-            model="TransE",
-            model_kwargs=dict(embedding_dim=100),
+            model="TransD",
+            model_kwargs=dict(embedding_dim=embedding_dim),
+            training_kwargs=dict(num_epochs=num_epochs),
         )
 
         self._model = result.model
@@ -153,8 +157,13 @@ class Embedder:
             ]
         )
 
-        tail_scores = self.model.score_t(hr)[0].detach().numpy()
-        result = np.column_stack((np.arange(tail_scores.shape[0]), tail_scores))
+        tail_scores = self.model.score_t(hr)[0]
+        tail_probabilities = softmax(tail_scores, dim=0)
+
+        tail_probabilities = tail_probabilities.detach().numpy()
+        result = np.column_stack(
+            (np.arange(tail_probabilities.shape[0]), tail_probabilities)
+        )
 
         if sort:
             result = result[result[:, 1].argsort()[::-1]]
