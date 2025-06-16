@@ -88,6 +88,15 @@ class Embedder:
             f"Learned {relation_embedding_tensor.shape[1]}-dimensional embeddings for {relation_embedding_tensor.shape[0]} relations"
         )
 
+        metrics = {
+            "HITS@1": result.get_metric("HITS@1"),
+            "HITS@3": result.get_metric("HITS@3"),
+            "HITS@10": result.get_metric("HITS@10"),
+            "MRR": result.get_metric("MRR"),
+        }
+
+        logger.info("Metrics:\n" + "\n".join([f"{k}={v}" for k, v in metrics.items()]))
+
     def get_entity_embedding(self, entity_id: str) -> np.ndarray:
         logger.debug(f"Extracting embeddings for entity {entity_id}")
 
