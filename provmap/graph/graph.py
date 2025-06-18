@@ -1,4 +1,5 @@
 import logging
+import pickle
 
 
 import networkx as nx
@@ -141,6 +142,17 @@ class Graph:
             triples.append(triple)
 
         return triples
+
+    def to_pickle(self) -> bytes:
+        return pickle.dumps(self.G)
+
+    @staticmethod
+    def from_pickle(pkl: bytes) -> "Graph":
+        graph = Graph()
+
+        graph.G = pickle.loads(pkl)
+
+        return graph
 
     def __str__(self) -> str:
         return f"Graph(|V| = {self.number_of_entities}, |E| = {self.number_of_edges})"
