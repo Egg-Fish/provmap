@@ -11,6 +11,7 @@ from torch.nn.functional import softmax
 from pykeen.models import ERModel
 from pykeen.triples import TriplesFactory
 from pykeen.pipeline import pipeline
+from pykeen.hpo import hpo_pipeline
 
 from sklearn.decomposition import PCA
 
@@ -53,8 +54,8 @@ class Embedder:
     def relations(self) -> np.ndarray:
         return np.array(list(self.data["training"].relation_to_id.keys()), dtype=str)
 
-    def train(self, embedding_dim: int = 32, num_epochs: int = 100) -> None:
-        logger.info("Training embedder using TransE")
+    def train(self, embedding_dim: int = 64, num_epochs: int = 500) -> None:
+        logger.info("Training embedder")
 
         result = pipeline(
             training=self.data["training"],
@@ -229,7 +230,7 @@ class Embedder:
         entity_embedding_tensor = self.entity_embedding_tensor
         relation_embedding_tensor = self.relation_embedding_tensor
 
-        if not entity_embedding_tensor or not relation_embedding_tensor:
+        if not np.any(entity_embedding_tensor) or not np.any(relation_embedding_tensor):
             raise ValueError("Embedding tensors not found")
 
         entity_labels = [
