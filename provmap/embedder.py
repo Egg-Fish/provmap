@@ -27,7 +27,7 @@ class Embedder:
         self.graph = graph
         self._model: ERModel | None = None
 
-        triples = [w.strip().split("\t") for w in open("out/graph.txt", "r")]
+        triples = self.graph.to_triples(include_timestamp=False)
 
         triples_array = np.array(triples, dtype=str)
 
