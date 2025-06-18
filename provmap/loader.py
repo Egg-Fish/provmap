@@ -33,6 +33,9 @@ class Loader:
 
         if "dir" not in self.config:
             raise ValueError("Directory not specified")
+        
+        if "outdir" not in self.config:
+            raise ValueError("Output directory not specified")
 
         if "logs" not in self.config:
             raise ValueError("No logs specified")
@@ -48,6 +51,10 @@ class Loader:
             for log_filename in self.config["logs"][log_type]:
                 if not log_filename.strip():
                     raise ValueError("Empty log filename found")
+                
+                log_filepath = os.path.join(self.config["dir"], log_filename)
+                if not os.path.exists(log_filepath):
+                    raise ValueError(f"Log {log_filepath} does not exist")
 
     def events_to_graph(self, events: list[Event]) -> Graph:
         graph = Graph()
