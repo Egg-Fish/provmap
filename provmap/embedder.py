@@ -39,6 +39,8 @@ class Embedder:
         self._entity_embedding_tensor: np.ndarray | None = None
         self._relation_embedding_tensor: np.ndarray | None = None
 
+        self._metrics: dict | None = None
+
     @property
     def model(self) -> ERModel:
         if not self._model:
@@ -53,6 +55,13 @@ class Embedder:
     @property
     def relations(self) -> np.ndarray:
         return np.array(list(self.data["training"].relation_to_id.keys()), dtype=str)
+
+    @property
+    def metrics(self) -> dict:
+        if not self._metrics:
+            raise ValueError("Retrieving metrics before calling tran()")
+
+        return self._metrics
 
     def train(self, embedding_dim: int = 64, num_epochs: int = 500) -> None:
         logger.info("Training embedder")
@@ -95,6 +104,8 @@ class Embedder:
             "HITS@10": result.get_metric("HITS@10"),
             "MRR": result.get_metric("MRR"),
         }
+
+        self._metrics = metrics
 
         logger.info("Metrics:\n" + "\n".join([f"{k}={v}" for k, v in metrics.items()]))
 
