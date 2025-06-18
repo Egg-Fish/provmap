@@ -17,7 +17,7 @@ WINDOWS_PATH_REGEX = re.compile(
 
 
 def extract_filepaths(command_line: str) -> list[str]:
-    tokens = shlex.split(command_line, posix=False)
+    tokens = shlex.split(shlex.quote(command_line), posix=False)
 
     matches = []
 
