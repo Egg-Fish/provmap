@@ -1,6 +1,7 @@
 import os
 import re
 import shlex
+from base64 import b64decode
 from dataclasses import dataclass
 
 
@@ -17,11 +18,26 @@ WINDOWS_PATH_REGEX = re.compile(
 
 
 def extract_filepaths(command_line: str) -> list[str]:
-    tokens = shlex.split(shlex.quote(command_line), posix=False)
+    try:
+        tokens = shlex.split(command_line, posix=False)
+    
+    except:
+        return []
+
+    decoded_tokens = []
+
+    for token in tokens:
+        try:
+            decoded = b64decode(token).decode().replace("\x00", "")
+
+            decoded_tokens.append(decoded)
+
+        except:
+            pass
 
     matches = []
 
-    for token in tokens:
+    for token in tokens + decoded_tokens:
         matches.extend(WINDOWS_PATH_REGEX.findall(token))
 
     return [os.path.normpath(m.lower().strip()) for m in matches]
