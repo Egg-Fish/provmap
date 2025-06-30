@@ -16,6 +16,14 @@ class Graph:
     def __init__(self) -> None:
         self.G: nx.MultiDiGraph = nx.MultiDiGraph()
 
+    @property
+    def number_of_entities(self) -> int:
+        return self.G.number_of_nodes()
+
+    @property
+    def number_of_edges(self) -> int:
+        return self.G.number_of_edges()
+
     def add_entity(self, entity: Entity) -> None:
         logger.debug(f"Adding entity {entity}")
         entity_id = entity.entity_id
@@ -30,13 +38,8 @@ class Graph:
 
         self.G.add_node(entity_id, obj=new)
 
-    @property
-    def number_of_entities(self) -> int:
-        return self.G.number_of_nodes()
-
-    @property
-    def number_of_edges(self) -> int:
-        return self.G.number_of_edges()
+    def get_entity(self, entity_id: str) -> Entity:
+        return self.G.nodes[entity_id]["obj"]
 
     def add_edge(self, edge: Edge) -> None:
         source: Entity = edge.source
@@ -75,6 +78,14 @@ class Graph:
 
         return new
 
+    def subgraph(self, entities: list[Entity]) -> "Graph":
+        G = self.G.subgraph([e.entity_id for e in entities]).copy()
+
+        new = Graph()
+        new.G = G
+
+        return new
+
     def trace(self, source_id: str) -> "Graph":
         prev_nodes: set = nx.ancestors(self.G, source_id)
         next_nodes: set = nx.descendants(self.G, source_id)
@@ -82,12 +93,53 @@ class Graph:
         nodes = prev_nodes.union(next_nodes)
         nodes.add(source_id)
 
-        G = self.G.subgraph(nodes).copy()
-
-        new = Graph()
-        new.G = G
+        new = self.subgraph([self.get_entity(e) for e in nodes])
 
         return new
+
+    def get_roots(self) -> list[str]:
+        roots = [
+            node
+            for node in self.G.nodes()
+            if self.G.in_degree(node) == 0 and self.G.out_degree(node) > 0
+        ]
+
+        return roots
+
+    def get_leaves(self) -> list[str]:
+        terminals = [
+            node
+            for node in self.G.nodes()
+            if self.G.in_degree(node) > 0 and self.G.out_degree(node) == 0
+        ]
+
+        return terminals
+
+    def to_walks(self, label: bool = False) -> list[list[str]]:
+        roots = self.get_roots()
+        leaves = self.get_leaves()
+
+        walks = []
+
+        for root in roots:
+            for leaf in leaves:
+                edge_paths = nx.all_simple_edge_paths(self.G, root, leaf)
+
+                for path in edge_paths:
+                    walk = []
+                    for tpl in path:
+                        source = tpl[0]
+                        relation = tpl[2]
+
+                        if label:
+                            source = self.G.nodes[source]["obj"].label
+
+                        walk.extend([source, relation])
+
+                    walk.append(leaf if not label else self.G.nodes[leaf]["obj"].label)
+                    walks.append(walk)
+
+        return walks
 
     def to_graphviz(self) -> str:
         res = "digraph{\n\toverlap=false;\n"
