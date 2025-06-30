@@ -78,7 +78,7 @@ class Reasoner:
         return entities
 
     def get_tags(self, entity: Entity) -> list[str]:
-        logger.info(f"Searching for tags of entity {entity}")
+        logger.debug(f"Searching for tags of entity {entity}")
 
         query = f"tag('{entity.entity_id}', Tag)"
 
@@ -87,6 +87,6 @@ class Reasoner:
         results = list(self.prolog.query(query))
 
         tags = list(set([r["Tag"] for r in results]))
-        logger.info(f"Found {len(tags)} tags")
+        logger.debug(f"Found {len(tags)} tags")
 
         return tags
