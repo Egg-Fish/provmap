@@ -26,6 +26,8 @@ def pcap_to_packets(pcap_filepath: str):
     for pkt in cap:
         yield pkt
 
+    cap.close()
+
 
 def parse_ip(pkt) -> tuple[str, str]:
     return (pkt.ip.src, pkt.ip.dst)
