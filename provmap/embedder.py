@@ -1,4 +1,5 @@
 import logging
+import pickle
 
 
 import numpy as np
@@ -16,18 +17,33 @@ from pykeen.hpo import hpo_pipeline
 from sklearn.decomposition import PCA
 
 from provmap.graph.graph import Graph
+from provmap.reasoner import Reasoner
 
 
 logger = logging.getLogger(__name__)
 
 
 class Embedder:
-    def __init__(self, graph: Graph) -> None:
+    def __init__(self, graph: Graph, reasoner: Reasoner | None = None) -> None:
         logger.info("Initialising embedder")
         self.graph = graph
         self._model: ERModel | None = None
 
         triples = self.graph.to_triples(include_timestamp=False)
+
+        for entity_id in graph.G.nodes():
+            entity = graph.G.nodes[entity_id]["obj"]
+            entity_type = type(entity).__name__
+
+            # triples.append((entity_id, "is", entity_type))
+
+            if reasoner:
+                tags = reasoner.get_tags(graph.G.nodes[entity_id]["obj"])
+
+                tag_names = [tag.split("__")[0] for tag in tags]
+                tag_triples = [(entity_id, "has_tag", tag) for tag in tag_names]
+
+                triples.extend(tag_triples)
 
         triples_array = np.array(triples, dtype=str)
 
@@ -70,9 +86,22 @@ class Embedder:
             training=self.data["training"],
             testing=self.data["testing"],
             validation=self.data["validation"],
-            model="TransD",
-            model_kwargs=dict(embedding_dim=embedding_dim),
-            training_kwargs=dict(num_epochs=num_epochs),
+            model="TransR",
+            model_kwargs=dict(
+                embedding_dim=embedding_dim,
+            ),
+            training_kwargs=dict(
+                num_epochs=num_epochs,
+            ),
+            stopper="early",
+            stopper_kwargs=dict(
+                frequency=50,
+                patience=5,
+                relative_delta=0.0,
+                # metric="hits_at_10",  # monitor HITS@10
+                metric="mrr",  # monitor MRR
+                larger_is_better=True,
+            ),
         )
 
         self._model = result.model
@@ -199,25 +228,32 @@ class Embedder:
 
         data = self.data["training"]
 
-        entity_df = pd.DataFrame(self.entity_embedding_tensor)
+        entity_df = pd.DataFrame(np.real(self.entity_embedding_tensor))
 
         logger.info("Running 2-component PCA")
         pca = PCA(n_components=2)
         reduced = pca.fit_transform(entity_df)
 
         entity_ids = [data.entity_id_to_label[i] for i in entity_df.index]
-        entities = [self.graph.G.nodes[i]["obj"] for i in entity_ids]
+
+        # Filter out the tails of "is" and "has_tag"
+        entities = [
+            (self.graph.G.nodes[i]["obj"] if i in self.graph.G else i)
+            for i in entity_ids
+        ]
 
         plot_df = pd.DataFrame(
             {
                 "entity_id": entity_ids,
-                "entity_type": [str(type(e)) for e in entities],
-                "label": [e.label for e in entities],
+                "entity_type": [type(e).__name__ for e in entities],
+                "label": [getattr(e, "label", e) for e in entities],
                 "idx": entity_df.index,
                 "pca_1": reduced[:, 0],
                 "pca_2": reduced[:, 1],
             }
         )
+
+        n = self.entity_embedding_tensor.shape[1]
 
         fig = px.scatter(
             plot_df,
@@ -225,7 +261,8 @@ class Embedder:
             y="pca_2",
             color="entity_type",
             hover_data=["entity_id", "label"],
-            title="Entity Embeddings (PCA 2D)",
+            title=f"Entity Embeddings (n={n})",
+            subtitle=str(self.metrics),
         )
 
         fig.show()
@@ -262,3 +299,10 @@ class Embedder:
 
         entity_df.to_csv(entity_outpath)
         relation_df.to_csv(relation_outpath)
+
+    def to_pickle(self) -> bytes:
+        return pickle.dumps(self)
+
+    @staticmethod
+    def from_pickle(pkl: bytes) -> "Embedder":
+        return pickle.loads(pkl)
