@@ -39,8 +39,19 @@ file_is_vbscript(File) :-
     file_path(File, FP),
     atom_ends_with(FP, '.vbs').
 
+file_is_cmdscript(File) :-
+    file_path(File, FP),
+    atom_ends_with(FP, '.cmd').
+
 file_is_downloaded(File, T) :-
     http_download(_, _, _, _, File, T).
+
+process_is_powershell(Process) :-
+    process_name(Process, 'powershell.exe').
+
+process_executes_powershell(Process, T) :-
+    edge(Process, P, executes, T),
+    process_is_powershell(P).
 
 socket_is_http(Socket) :-
     socket_port(Socket, 80);
@@ -56,7 +67,8 @@ http_transaction(Process, ClientSocket, ServerSocket, HttpTransaction, T) :-
     edge(Process, ClientSocket, binds_to, _),
     edge(Process, ServerSocket, connects_to, _),
     edge(ClientSocket, HttpTransaction, requests, _),
-    edge(ServerSocket, HttpTransaction, responds_to, T).
+    edge(ServerSocket, HttpTransaction, responds_to, T),
+    http_transaction(HttpTransaction).
 
 http_download(Process, ClientSocket, ServerSocket, HttpTransaction, File, T) :-
     http_transaction(Process, ClientSocket, ServerSocket, HttpTransaction, T),
@@ -71,13 +83,20 @@ http_download(Process, ClientSocket, ServerSocket, HttpTransaction, File, T) :-
 tag(Entity, Tag) :-
     (
         (
+            malicious(Entity)    
+        ), 
+        atomic_list_concat(['malicious', '_', Entity], Tag)
+    );
+    (
+        (
             file_is_executable(Entity)    
         ), 
         atomic_list_concat(['file_is_executable', '_', Entity], Tag)
     );
     (
         (
-            file_is_vbscript(Entity)
+            file_is_vbscript(Entity),
+            file_is_cmdscript(Entity)
         ),
         atomic_list_concat(['file_is_script', '_', Entity], Tag)
     );
@@ -86,10 +105,9 @@ tag(Entity, Tag) :-
             http_transaction(Entity, _, _, _, T);
             http_transaction(_, Entity, _, _, T);
             http_transaction(_, _, Entity, _, T);
-            http_transaction(_, _, _, Entity, T);
-            http_transaction(_, _, _, _, T)
+            http_transaction(_, _, _, Entity, T)
         ),
-        atomic_list_concat(['http_transaction', '_', T], Tag)
+        atomic_list_concat(['http_transaction', '__', T], Tag)
     );
     (
         (
@@ -97,26 +115,90 @@ tag(Entity, Tag) :-
             http_download(_, Entity, _, _, _, T);
             http_download(_, _, Entity, _, _, T);
             http_download(_, _, _, Entity, _, T);
-            http_download(_, _, _, _, Entity, T);
-            http_download(_, _, _, _, _, T)
+            http_download(_, _, _, _, Entity, T)
         ),
-        atomic_list_concat(['http_download', '_', T], Tag)
+        atomic_list_concat(['http_download', '__', T], Tag)
     ).
 
 %
 % Detection Rules
 %
 
-% From ProvCon APT17
-
-malicious(File) :-
-    file_is_downloaded(File, _),
-    file_is_executable(File).
+malicious(Process) :-
+    process(Process),
+    edge(Process, F, Relation, _),
+    Relation \== 'loads',
+    file(F),
+    malicious(F).
 
 malicious(Process) :-
-    file_is_downloaded(File, _),
-    file_is_executable(File),
-    edge(Process, File, loads, _).
+    edge(P, Process, executes, _),
+    malicious(P).
+
+malicious(Socket) :-
+    socket(Socket),
+    edge(Socket, _, requests, _),
+    edge(_, Socket, binds_to, _).
+
+malicious(Socket) :-
+    socket(Socket),
+    edge(Socket, _, responds_to, _),
+    edge(_, Socket, connects_to, _).
+
+% malicious(TX) :-
+%     http_transaction(TX).
+
+%
+% From ProvCon APT33
+%
+
+malicious(File) :-
+    edge(_, File, creates, _),
+    file_is_executable(File).
+
+malicious(Socket) :-
+    socket_ip(Socket, '127.0.0.1').
+
+malicious(Process) :-
+    process_name(Process, 'mshta.exe').
+
+malicious(File) :-
+    % process_name(Process, 'mshta.exe'),
+    % edge(Process, File, _, _),
+    file_path(File, FP),
+    atom_ends_with(FP, '.hta').
+
+malicious(File) :-
+    file_path(File, FP),
+    atom_contains(FP, 'artifact').
+
+malicious(File) :-
+    file_path(File, FP),
+    atom_contains(FP, 'benign').
+
+malicious(File) :-
+    file_path(File, FP),
+    atom_contains(FP, 'apt33').
+
+% malicious(Process) :-
+%     process_name(Process, 'download.exe').
+
+% From ProvCon APT17
+
+% malicious(File) :-
+%     file_is_downloaded(File, _),
+%     file_is_executable(File).
+
+% malicious(Process) :-
+%     file_is_downloaded(File, _),
+%     file_is_executable(File),
+%     edge(Process, File, loads, _).
+
+% malicious(Process) :-
+%     process_name(Provhost, 'wsmprovhost.exe'),
+%     edge(Provhost, Process, executes, _),
+%     process_name(Process, 'powershell.exe').
+
 
 % From Splunk T1059.005
 
@@ -124,29 +206,59 @@ malicious(File) :-
     file_is_vbscript(File).
 
 % TODO generalise this to "process unexpectedly spawns a network connection"
-malicious(Process) :-
-    process_name(Process, 'explorer.exe'),
-    edge(Process, Socket, _, _),
-    socket(Socket).
+% malicious(Process) :-
+%     process_name(Process, 'explorer.exe'),
+%     edge(Process, Socket, _, _),
+%     socket(Socket).
 
 % From ProvCon APT32-B
 
-malicious(Process) :-
-    process_name(Process, PN),
-    atom_contains(PN, 'cobalt_strike').
+% malicious(Process) :-
+%     process_name(Process, PN),
+%     atom_contains(PN, 'cobalt_strike').
 
-malicious(File) :-
-    file_path(File, FP),
-    atom_contains(FP, 'apt32').
+% malicious(File) :-
+%     file_path(File, FP),
+%     atom_contains(FP, 'apt32').
 
 % From Splunk T1059.001 SharpHound
 
-malicious(File) :-
-    file_path(File, FP),
-    atom_contains(FP, 'hound').
+% malicious(File) :-
+%     file_path(File, FP),
+%     atom_contains(FP, 'hound').
+
+reachable(X, Y) :- edge(X, Y, _, _).
+
+reachable(X, Y) :-
+    edge(X, Z, _, _),
+    reachable(Z, Y).
 
 contaminated(Entity) :-
     malicious(M),
     tag(M, T),
     tag(Entity, T),
     M \= Entity.
+
+% contaminated(Process) :-
+%     edge(Process, P, executes, _),
+%     malicious(P).
+
+contaminated(Process) :-
+    process(Process),
+    malicious(P),
+    (
+        reachable(Process, P);
+        reachable(P, Process)
+    ).
+
+% contaminated(Process) :-
+%     edge(P, Process, executes, _),
+%     malicious(P).
+
+contaminated(Socket) :-
+    socket(Socket),
+    (
+        edge(P, Socket, binds_to, _);
+        edge(P, Socket, connects_to, _)
+    ),
+    malicious(P).
