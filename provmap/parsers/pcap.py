@@ -203,7 +203,10 @@ class PcapParser(Parser):
 
         q = []
         for pkt in self._http_packets:
-            x, uri = parse_http(pkt)
+            try:
+                x, uri = parse_http(pkt)
+            except:
+                continue
 
             if type(x) == str:
                 q.append(pkt)
@@ -226,7 +229,10 @@ class PcapParser(Parser):
 
         q = []
         for pkt in self._ftp_packets:
-            x, _ = parse_ftp(pkt)
+            try:
+                x, _ = parse_ftp(pkt)
+            except:
+                continue
 
             if type(x) == str:
                 q.append(pkt)

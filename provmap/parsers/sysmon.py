@@ -155,23 +155,27 @@ class SysmonParser(Parser):
         event_dicts = dict_func(self.filepath)
 
         for event_dict in event_dicts:
-            event_id = event_dict["EventID"]
+            try:
+                event_id = event_dict["EventID"]
 
-            if event_id == 1:
-                event = parse_process_create(event_dict)
-                self._events.append(event)
+                if event_id == 1:
+                    event = parse_process_create(event_dict)
+                    self._events.append(event)
 
-            elif event_id == 3:
-                event = parse_network_connection(event_dict)
-                self._events.append(event)
+                elif event_id == 3:
+                    event = parse_network_connection(event_dict)
+                    self._events.append(event)
 
-            elif event_id == 7:
-                event = parse_image_loaded(event_dict)
-                self._events.append(event)
+                # elif event_id == 7:
+                #     event = parse_image_loaded(event_dict)
+                #     self._events.append(event)
 
-            elif event_id == 11:
-                event = parse_file_create(event_dict)
-                self._events.append(event)
+                elif event_id == 11:
+                    event = parse_file_create(event_dict)
+                    self._events.append(event)
+
+            except:
+                pass
 
         self._parsed = True
         return self._events
