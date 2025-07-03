@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from dataclasses import dataclass
 
 from provmap.events.event import Event
@@ -21,7 +22,7 @@ class ImageLoaded(Event):
 
         process = Process(
             process_id=self.process_id,
-            process_name=os.path.basename(self.image),
+            process_name=Path(self.image).name,
             entity_id=self.process_guid,
         )
         process_image = File(file_path=self.image)

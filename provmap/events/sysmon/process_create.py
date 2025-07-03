@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import re
 import shlex
 from base64 import b64decode
@@ -73,7 +74,7 @@ class ProcessCreate(Event):
 
         parent_process = Process(
             process_id=self.parent_process_id,
-            process_name=os.path.basename(self.parent_image),
+            process_name=Path(self.parent_image).name,
             process_cmd=self.parent_command_line,
             entity_id=self.parent_process_guid,
         )
@@ -82,7 +83,7 @@ class ProcessCreate(Event):
 
         child_process = Process(
             process_id=self.process_id,
-            process_name=os.path.basename(self.image),
+            process_name=Path(self.image).name,
             process_cmd=self.command_line,
             entity_id=self.process_guid,
         )

@@ -8,6 +8,7 @@ from provmap.graph.entities.file import File
 from provmap.graph.entities.process import Process
 from provmap.graph.entities.socket import Socket
 from provmap.graph.graph import Graph
+from pathlib import Path
 
 
 @dataclass
@@ -35,7 +36,7 @@ class NetworkConnection(Event):
 
         process = Process(
             process_id=self.process_id,
-            process_name=os.path.basename(self.image),
+            process_name=Path(self.image).name,
             entity_id=self.process_guid,
         )
         process_image = File(file_path=self.image)
