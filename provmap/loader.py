@@ -67,7 +67,7 @@ class Loader:
 
         return graph
 
-    def construct_graph(self) -> Graph:
+    def construct_graph(self, include_pcap: bool = False) -> Graph:
         logger.info("Constructing graph")
         graph = Graph()
 
@@ -80,9 +80,14 @@ class Loader:
             for filepath in log_files:
                 logger.info(f"Parsing {log_type} file {filepath}")
 
+                if log_type == "pcap" and not include_pcap:
+                    logger.info("Skipping pcap file. Set --include-pcap to enable.")
+                    continue
+
                 complete_filepath = os.path.join(self.config["dir"], filepath)
 
                 events = parser(complete_filepath).parse()
+                # events = []
 
                 logger.info(f"# of events = {len(events)}")
 
