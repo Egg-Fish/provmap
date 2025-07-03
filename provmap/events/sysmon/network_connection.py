@@ -29,6 +29,7 @@ class NetworkConnection(Event):
     destination_hostname: str
     destination_port: int
     destination_port_name: str
+
     def to_graph(self) -> Graph:
         graph = Graph()
 
